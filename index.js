@@ -1,59 +1,108 @@
-/* Move the data to a file called data.js and import it into index.js. */
 import { catsData } from "./data.js";
 
-// *********************************************
-
-// 7.1 => Take control of the 'emotion-radios' div.
 const emotionRadios = document.getElementById("emotion-radios");
 const getImageBtn = document.getElementById("get-image-btn");
-// 25.1. Take control of the gifs only option checkbox.
 const gifsOnlyOption = document.getElementById("gifs-only-option");
+const memeModalInner = document.getElementById("meme-modal-inner");
+const memeModal = document.getElementById("meme-modal");
+const memeModalCloseBtn = document.getElementById("meme-modal-close-btn");
 
 emotionRadios.addEventListener("change", highlightCheckedOption);
-// 22.1=> Set up an eventlistener which calls a new function called "getMatchingCatsArray" when the "Get Image" button is clicked.
-getImageBtn.addEventListener("click", getMatchingCatsArray);
-function highlightCheckedOption(e) {
-  //  console.log(e.target.id);
-  // ==>  highlightCheckedOption should take control of the selected radio input and add the CSS class of "highlight" to its classlist
-  //  document.getElementById(e.target.id).classList.add("highlight");
 
-  // 20.1=> Create an array of all items that have the "radio" class.
+// 34.1==> Wire up the X button in the modal so it closes the modal.
+memeModalCloseBtn.addEventListener("click", closeModal);
+
+// 30.
+// getImageBtn.addEventListener("click", getMatchingCatsArray);
+getImageBtn.addEventListener("click", renderCat);
+
+// TURNS THE INPUT RADIO RED(.highlight) WHEN SELECTED & THIS WILL BE REMOVED WHEN A DIFF. ONE IS SELECTED
+function highlightCheckedOption(e) {
   const radios = document.getElementsByClassName("radio");
-  // 20.2=> Iterate over the array and remove the "highlight" class from each one.
   for (let radio of radios) {
     radio.classList.remove("highlight");
   }
-
-  // ==>Change the code so we add the 'highlight' class to the parent of the selected input radio.
   document.getElementById(e.target.id).parentElement.classList.add("highlight");
 }
 
-// 22.2=> getMatchingCatsArray should save the value of the checked radio input to a const and log out that const.
-function getMatchingCatsArray(e) {
-  // 25.2. Set up a const in getMatchingCatsArray to store a boolean which will be set to true if the "gifs only" option is checked and false if it's not. (Think what a good name for this const would be.)
-  const isGif = gifsOnlyOption.checked;
-  // 25.3. Log it out to check it's working
-  console.log(isGif);
+function closeModal() {
+  memeModal.style.display = "none";
+}
 
-  // 23.1 ==> Add code to getMatchingCatsArray so that the two existing lines of code only run if an emotion has been selected. This will run 'if' a radio btn has been checked. No err mess anymore when only the "Get Image" btn in clicked.
-  if (document.querySelector('input[type="radio"]:checked')) {
-    const selectedEmotiom = document.querySelector(
-      'input[type="radio"]:checked'
-    ).value;
-    console.log(selectedEmotiom);
+// RENDERS THE CAT TO THE DOM
+// 1. needs to get the cat obj provided by getSingleCatObject()
+// 2. needs to create some html string
+// 3. needs to render it out to the DOM
+function renderCat() {
+  // 33.1==> Take the object that is returned by getSingleCatObject and save it to a const
+  // called "catObject".
+  const catObject = getSingleCatObject();
+  // 33.2==> Set memeModalInner’s innerHTML to the HTML string below, remembering to insert the relevant
+  // data from catObject to replace the UPPERCASE text.
+  memeModalInner.innerHTML = `
+    <img 
+      class="cat-img"
+      src="./images/${catObject.image}"
+      alt="${catObject.alt}"
+    />
+  `;
+  // 33.3==> Set memeModal’s display property to "flex"
+  memeModal.style.display = "flex";
+}
+
+// 30. Introducing 2 important functions
+// NARROWS DOWN THE ARRAY OF MATCHING CATS (matchingCatsArray) TO JUST 1 CAT OBJECT
+function getSingleCatObject() {
+  // console.log(getMatchingCatsArray());
+  // CONSOLE ==>
+  // [{emotionTags: ["happy", "relaxed"], isGif: false, image: "happy.jpeg", alt: "A cat looking happy"}, {emotionTags: ["happy"], isGif: true, image: "happy.gif", alt: "A cat looking happy"}]
+
+  // 31.1 ==> Inside this function, call getMatchingCatsArray and save whatever it returns to a const called “catsArray”. [to test, call getSingleCatObject() in renderCat()]
+  const catsArray = getMatchingCatsArray();
+  // console.log(catsArray);
+
+  //  31.2 ==>Set up an if to check if there is only one cat object in the array. If there is, log out that cat object (but not the whole array!) {} Test: "happy", animated GIFS only checked.
+  if (catsArray.length === 1) {
+    // console.log(catsArray[0]);
+    return catsArray[0];
+  } else {
+    // 32.1==> If catsArray has more than one object, select an object at random and log it out.
+    const randomNumber = Math.floor(Math.random() * catsArray.length);
+    // console.log(catsArray[randomNumber]);
+    return catsArray[randomNumber];
+    // CONSOLE ===>
+    // {emotionTags: ["moody", "insomniac"], isGif: false, image: "angry2.jpeg", alt: "A cat looking moody"}
   }
 }
-// CONSOLE ===> select radio button for 'happy' then click "Get Image" button
-// happy
-// ! if only the "Get Image" button is clicked, this is the err mess --->
-// TypeError: Cannot read properties of null (reading 'value')
+// ============================================
+// SAVES THE VALUE OF THE CHECKED RADIO INPUT TO A CONST & STORES A BOOLEAN WHICH WILL BE SET TO TRUE IF THE "GIFS ONLY" OPTION IS CHECKED AND FALSE IF IT'S NOT
+// WILL FILTER OUT CATS BASED ON EMOTION SELECTED VIA RADIO INPUT & IF ANIMATED GIFS ARE PREFERRED, SHD. THERE BE ANY; ELSE, matchingCatsArray WILL JUST FILTER OUT THE CATS BASED ON SELECTED EMOTION
+function getMatchingCatsArray() {
+  if (document.querySelector('input[type="radio"]:checked')) {
+    const selectedEmotion = document.querySelector(
+      'input[type="radio"]:checked'
+    ).value;
+    const isGif = gifsOnlyOption.checked;
+    // 28.1==> Use the .filter() and .includes() methods to get an array of cats which have the selected emotion in their emotionTags array.
+    // 28.2==> Store this array in a const and log it out to check it's working. Think: what would be a good name for the const?
+    const matchingCatsArray = catsData.filter(function (cat) {
+      // 29.1==> Change the .filter() method's function so it returns an array that only has GIFs if the 'GIFs only' option is checked. If the 'GIFs only' option is not checked, it should return an array of all matches as it does now.
+      if (isGif) {
+        return cat.emotionTags.includes(selectedEmotion) && cat.isGif;
+      } else {
+        return cat.emotionTags.includes(selectedEmotion);
+      }
+    });
+    return matchingCatsArray;
+  }
+}
 
+// THIS ONLY ALLOWS AN EMOTION TO BE PUSHED TO emotionsArray IF IT IS NOT YET IN THIS ARRAY
+// CREATES THE ARRAY
 function getEmotionsArray(cats) {
   const emotionsArray = [];
-
   for (let cat of cats) {
     for (let emotion of cat.emotionTags) {
-      // 13.1 => Refactor this nested for of so that an emotion is only pushed to emotionsArray if it is not already in emotionsArray. Extra kudos if you use the "logical not" operator - feel free to google it!
       if (!emotionsArray.includes(emotion)) {
         emotionsArray.push(emotion);
       }
@@ -61,45 +110,25 @@ function getEmotionsArray(cats) {
   }
   return emotionsArray;
 }
-// 6.1 => Have the new function "renderEmotionsRadios" take in a single parameter. Name that parameter "cats".
-// function renderEmotionsRadios(cats) {
-// 6.2 => Inside renderEmotionsRadios, set up a const called "emotions" and set it equals to whatever is returned by calling getEmotionsArray, passing in "cats" as an argument.
-//   const emotions = getEmotionsArray(cats);
-// 6.3 => For now, renderEmotionsRadios should just log out
-// "emotions".
-//   console.log(emotions);
-// }
-//  6.4 => Call renderEmotionsRadios passing in catsData.
-// renderEmotionsRadios(catsData);
-// CONSOLE===>
-// ["moody", "moody", "insomniac", "moody", "confused", "sad", "dominant", "moody", "happy", "relaxed", "hungry", "hungry", "insomniac", "insomniac", "relaxed", "scared", "sad", "sad", "moody", "moody", "moody", "confused", "dominant", "happy", "hungry", "sad", "confused", "hungry", "hungry", "insomniac", ...]
-// *********************************************
+
+// HTML THAT WILL RENDER A RADIO INPUT FOR EACH EMOTION. THE STRING WILL BE RENDERED OUT TO THE  'emotion-radios' DIV USING DATA FR catsData ARRAY
+// RENDERS THE ARRAY OUT
 function renderEmotionsRadios(cats) {
-  // 7.2=> In renderEmotionsRadios, set up a let to hold our string of HTML. You can initialise it with an empty string.
   let radioItems = "";
   const emotions = getEmotionsArray(cats);
-  // 7.3=> Iterate over "emotions" and put each emotion in a <p> tag and then add them to the let you created in step 2.
   for (let emotion of emotions) {
-    // 11.1=> Swap out `<p>${emotion}</p>` for HTML that will render a radio input for each emotion. Remember to use "type", "id", "value", and "name" properties on each radio.("id" and "value" can both be set to the "emotion").
-    // 11.2=> Remember to give each radio a label.
-    // 11.3=> Enclose each individual radio input in this div:
-    //    <div class="radio">
-    //       **RADIO HERE**
-    //    </div>
-
-    //  radioItems += `<p>${emotion}</p>`;
-    radioItems += `<div class='radio'>
-            <label for='${emotion}'>${emotion}</label>
+    radioItems += `
+        <div class="radio">
+            <label for="${emotion}">${emotion}</label>
             <input
-                type='radio'
-                id='${emotion}'
-                value='${emotion}'
-                name='emotions'
-            />
-      </div>`;
+            type="radio"
+            id="${emotion}"
+            value="${emotion}"
+            name="emotions"
+            >
+        </div>`;
   }
-  // 7.4 => Render the string to the 'emotion-radios' div.
   emotionRadios.innerHTML = radioItems;
 }
-// 7.4=> Render the string to the 'emotion-radios' div.
+
 renderEmotionsRadios(catsData);
